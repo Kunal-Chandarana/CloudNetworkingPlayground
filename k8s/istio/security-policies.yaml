@@ -1,0 +1,56 @@
+# Peer Authentication - Enable mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: service-mesh-playground
+spec:
+  mtls:
+    mode: STRICT
+---
+# Authorization Policy - Restrict access between services
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: service-mesh-authz
+  namespace: service-mesh-playground
+spec:
+  rules:
+  # Allow frontend to access API gateway
+  - from:
+    - source:
+        principals: ["cluster.local/ns/service-mesh-playground/sa/frontend"]
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/api/*"]
+  # Allow API gateway to access all services
+  - from:
+    - source:
+        principals: ["cluster.local/ns/service-mesh-playground/sa/api-gateway"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+  # Allow health checks
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        paths: ["/health"]
+---
+# Authorization Policy - Rate limiting
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: rate-limit-policy
+  namespace: service-mesh-playground
+spec:
+  rules:
+  - to:
+    - operation:
+        methods: ["GET", "POST"]
+    when:
+    - key: source.ip
+      values: ["*"]
+    # This will be enforced by Envoy's rate limiting

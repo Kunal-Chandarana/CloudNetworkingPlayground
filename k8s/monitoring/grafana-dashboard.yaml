@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-service-mesh
+  namespace: service-mesh-playground
+  labels:
+    grafana_dashboard: "1"
+data:
+  service-mesh-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Service Mesh Dashboard",
+        "tags": ["istio", "service-mesh"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(istio_requests_total[5m])",
+                "legendFormat": "{{destination_service_name}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "requests/sec"
+              }
+            ],
+            "xAxes": [
+              {
+                "type": "time"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(istio_requests_total{response_code=~\"5..\"}[5m])",
+                "legendFormat": "{{destination_service_name}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "errors/sec"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Response Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(istio_request_duration_milliseconds_bucket[5m]))",
+                "legendFormat": "95th percentile"
+              },
+              {
+                "expr": "histogram_quantile(0.50, rate(istio_request_duration_milliseconds_bucket[5m]))",
+                "legendFormat": "50th percentile"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "milliseconds"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Service Topology",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "istio_requests_total",
+                "legendFormat": "{{source_service_name}} -> {{destination_service_name}}"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "5s"
+      }
+    }

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-config
+  namespace: service-mesh-playground
+data:
+  jaeger.yaml: |
+    collector:
+      zipkin:
+        http-port: 9411
+    storage:
+      type: memory
+      options:
+        memory:
+          max-traces: 50000
+    query:
+      base-path: /jaeger
+    agent:
+      reporter:
+        type: grpc
+        grpc:
+          host-port: jaeger-collector:14250
